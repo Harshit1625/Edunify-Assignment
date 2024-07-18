@@ -1,113 +1,185 @@
+"use client";
+
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
+import axios from "axios";
 import Image from "next/image";
+import { useState } from "react"
+import { useRouter } from "next/navigation";
 
-export default function Home() {
+//using yup to create a validated schema
+const schema = yup.object().shape({
+  name: yup.string().required("School name is required"),
+  address: yup.string().required("Address is required"),
+  state: yup.string().required("State is required"),
+  city: yup.string().required("City is required"),
+  contact: yup
+    .number()
+    .typeError("Contact must be a number")
+    .required("Contact is required"),
+  email: yup.string().email("Invalid email").required("Email is required"),
+  image: yup.mixed().required("Image is required"),
+});
+
+const SchoolForm = () => {
+  const [open, setOpen] = useState(false); //to make the button disabled during data submission
+  const router = useRouter();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: yupResolver(schema),
+  });
+
+  const onSubmit = async (data) => {
+    console.log(data);
+    const formData = new FormData();
+    formData.append("name", data.name);
+    formData.append("address", data.address);
+    formData.append("city", data.city);
+    formData.append("state", data.state);
+    formData.append("contact", data.contact);
+    formData.append("image", data.image[0]);
+    formData.append("email", data.email);
+    console.log(formData);
+
+    try {
+      setOpen(true);
+      await axios
+        .post("/api/schools", formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        })
+        .then((response) => {
+          console.log(response);
+          setOpen(false);
+          router.push("/data");
+        });
+    } catch (error) {
+      console.error("Failed to submit school data", error);
+    }
+  };
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/app/page.js</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+    <div className="relative flex items-center justify-center pl-[3vw] pr-[3vw]">
+      <form
+        className="bg-white shadow-lg rounded-xl flex flex-col gap-5 p-5 lg:p-9 mt-[10vh] lg:w-1/3 w-[90%] md:w-1/2 sm:w-1/2 transition-all"
+        onSubmit={handleSubmit(onSubmit)}
+      >
+        <div className="flex gap-4 items-center justify-center">
+          <h1 className="font-bold text-[20px] mt-1">Enter School Details</h1>
+          <Image width={25} height={25} src={"/SchoolIcon.svg"} />
         </div>
-      </div>
 
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-full sm:before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full sm:after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px] z-[-1]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
+        <div className="flex flex-col gap-2">
+          <label className="font-bold ml-1">Name</label>
+          <input
+            className="focus:outline-none border rounded-xl focus:border p-2"
+            placeholder="Enter School Name"
+            {...register("name")}
+          />
+          {errors.name && (
+            <p className="text-red-600 ml-1">{errors.name.message}</p>
+          )}
+        </div>
 
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
+        <div className="flex flex-col gap-2">
+          <label className="font-bold ml-1">Address</label>
+          <input
+            className="focus:outline-none border rounded-xl focus:border p-2"
+            placeholder="Enter School Address"
+            {...register("address")}
+          />
+          {errors.address && (
+            <p className="text-red-600 ml-1">{errors.address.message}</p>
+          )}
+        </div>
 
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800 hover:dark:bg-opacity-30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
+        <div className="flex gap-2 justify-between">
+          <div className="flex flex-col gap-2 w-full">
+            <label className="font-bold ml-1">State</label>
+            <input
+              className="focus:outline-none border rounded-xl focus:border p-2 w-full"
+              placeholder="Enter State"
+              {...register("state")}
+            />
+            {errors.state && (
+              <p className="text-red-600 ml-1">{errors.state.message}</p>
+            )}
+          </div>
 
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Explore starter templates for Next.js.
-          </p>
-        </a>
+          <div className="flex flex-col w-full gap-2">
+            <label className="font-bold ml-1">City</label>
+            <input
+              className="focus:outline-none border rounded-xl focus:border p-2 w-full"
+              placeholder="Enter City"
+              {...register("city")}
+            />
+            {errors.city && (
+              <p className="text-red-600 ml-1">{errors.city.message}</p>
+            )}
+          </div>
+        </div>
 
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50 text-balance`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+        <div className="flex gap-2">
+          <div className="flex flex-col gap-2 w-full">
+            <label className="font-bold ml-1">Contact Number</label>
+            <input
+              className="focus:outline-none border rounded-xl focus:border p-2 w-full"
+              placeholder="Enter contact number"
+              {...register("contact")}
+            />
+            {errors.contact && (
+              <p className="text-red-600 ml-1">{errors.contact.message}</p>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-2 w-full">
+            <label className="font-bold ml-1">Email</label>
+            <input
+              className="focus:outline-none border rounded-xl focus:border p-2 w-full"
+              placeholder="Enter school email"
+              {...register("email")}
+            />
+            {errors.email && (
+              <p className="text-red-600 ml-1">{errors.email.message}</p>
+            )}
+          </div>
+        </div>
+
+        <div className="flex gap-2">
+          <div className="flex flex-col gap-2 w-1/2">
+            <label className="font-bold ml-1">Image</label>
+            <input
+              type="file"
+              name="image"
+              className="file:rounded-lg file:outline-none file:border file:border-dashed file:p-3 file:bg-white file:hover:bg-black file:hover:border-white file:hover:text-white transition-all file:opacity-40"
+              {...register("image")}
+            />
+            {errors.image && (
+              <p className="text-red-600 ml-1">{errors.image.message}</p>
+            )}
+          </div>
+          <div className="w-full items-end justify-center flex">
+            <button
+              className={
+                open
+                  ? "p-3 pl-[3vw] rounded border-dashed bg-gray-500 text-white pr-[3.5vw]"
+                  : "p-3 pl-[3vw] w-full rounded border-dashed text-white bg-black hover:border hover:border-black hover:bg-white hover:text-black transition-all pr-[3.5vw]"
+              }
+              type="submit"
+              disabled={open}
+            >
+              {open ? "Submitting..." : "Submit"}
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
   );
-}
+};
+
+export default SchoolForm;
